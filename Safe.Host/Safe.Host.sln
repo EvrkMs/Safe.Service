@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36518.9 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Safe.Service", "Safe.Service.csproj", "{FB02CEC7-1343-4818-53C0-95978A966D24}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Safe.Host", "Safe.Host.csproj", "{FB02CEC7-1343-4818-53C0-95978A966D24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

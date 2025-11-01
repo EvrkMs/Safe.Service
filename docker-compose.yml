@@ -1,8 +1,8 @@
 services:
   safe-host:
     build:
-      context: .
-      dockerfile: Safe.Host/Dockerfile
+      context: ./Safe.Host
+      dockerfile: Dockerfile
     image: ${SAFE_HOST_IMAGE:-safe-host:latest}
     env_file:
       - ../auth-host.env
@@ -11,7 +11,7 @@ services:
     environment:
       Auth__Introspection__ClientSecret: ${OIDC_SVC_INTROSPECTOR_SECRET}
     expose:
-      - "5000"
+      - "5001"
     networks:
       - nginx_network
 
