@@ -26,7 +26,7 @@ static class EphemeralCert
     {
         using var rsa = System.Security.Cryptography.RSA.Create(2048);
         var req = new CertificateRequest(
-            "CN=auth-host",
+            "CN=safe-host",
             rsa,
             System.Security.Cryptography.HashAlgorithmName.SHA256,
             System.Security.Cryptography.RSASignaturePadding.Pkcs1);
