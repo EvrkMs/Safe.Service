@@ -1,0 +1,20 @@
+services:
+  safe-host:
+    build:
+      context: .
+      dockerfile: Safe.Host/Dockerfile
+    image: ${SAFE_HOST_IMAGE:-safe-host:latest}
+    env_file:
+      - ../auth-host.env
+    container_name: safe-host
+    restart: unless-stopped
+    environment:
+      Auth__Introspection__ClientSecret: ${OIDC_SVC_INTROSPECTOR_SECRET}
+    ports:
+      - "${SAFE_HOST_HTTP_PORT:-8080}:8080"
+    networks:
+      - safe-host-network
+
+networks:
+  safe-host-network:
+    driver: bridge
