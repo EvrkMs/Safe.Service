@@ -10,11 +10,12 @@ services:
     restart: unless-stopped
     environment:
       Auth__Introspection__ClientSecret: ${OIDC_SVC_INTROSPECTOR_SECRET}
-    ports:
-      - "${SAFE_HOST_HTTP_PORT:-8080}:8080"
+    expose:
+      - "5000"
     networks:
-      - safe-host-network
+      - nginx_network
 
 networks:
-  safe-host-network:
+  nginx_network:
+    external: true
     driver: bridge
