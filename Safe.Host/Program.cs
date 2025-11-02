@@ -97,6 +97,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors("AllowAvaSubdomains");
+app.UseCors("admin-ui");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
