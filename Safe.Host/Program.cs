@@ -52,6 +52,19 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<SafeDbContext>("database");
 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "admin-ui",
+                      policy =>
+                      {
+                          policy.WithOrigins("https://admin.ava-kk.ru") // Replace with your allowed origins
+                                .AllowAnyHeader() // Allows any header in the request
+                                .AllowCredentials()
+                                .AllowAnyMethod(); // Allows any HTTP method (GET, POST, PUT, DELETE, etc.)
+                      });
+});
+
 var app = builder.Build();
 
 app.UseMiddleware<SampleMiddleware>();
