@@ -12,6 +12,7 @@ services:
       - "5001"
     networks:
       - nginx_network
+      - data-network
     healthcheck:
       test: ["CMD", "curl", "-fsSk", "https://localhost:5001/health"]
       interval: 30s
@@ -21,5 +22,9 @@ services:
 
 networks:
   nginx_network:
+    external: true
+    driver: bridge
+
+  data-network:
     external: true
     driver: bridge
