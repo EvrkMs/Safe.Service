@@ -15,8 +15,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 COPY --from=build /out ./
 
-# порт и биндинг
-ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 5001
 
 # замените MyProject.dll на реальное имя сборки (обычно как .csproj)

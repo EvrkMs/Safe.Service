@@ -1,5 +1,11 @@
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
+using Auth.TokenValidation;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Safe.Application.Services;
+using Safe.EntityFramework;
+using Safe.EntityFramework.Contexts;
+using Safe.Host;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,35 +20,50 @@ builder.WebHost.UseKestrel(o =>
     });
 });
 
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
+    });
+
+builder.Services.AddAuthTokenIntrospection(options =>
+{
+    options.Authority = "https://auth.ava-kk.ru";
+    options.ClientId = "svc.introspector";
+    options.ClientSecret = Environment.GetEnvironmentVariable("OIDC_SVC_INTROSPECTOR_SECRET")!;
+});
+
+builder.Services.AddDbContext<SafeDbContext>(opt =>
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("SAFE_DB")));
+
+// FluentValidation - нужен пакет FluentValidation.DependencyInjectionExtensions
+builder.Services.AddValidatorsFromAssemblyContaining<CreateChangeCommandValidator>();
+
+builder.Services.AddScoped<ISafeService, SafeService>();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Safe.Read", p => p.RequireAuthenticatedUser());
+    options.AddPolicy("Safe.Write", p => p.RequireRole("root", "SafeManager"));
+});
+
+// Health checks - нужен пакет Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<SafeDbContext>("database");
+
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+app.UseMiddleware<SampleMiddleware>();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SafeDbContext>();
+    await db.Database.MigrateAsync();
+}
+
+app.UseAuthorization();
+app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
-
-static class EphemeralCert
-{
-    public static X509Certificate2 Create()
-    {
-        using var rsa = System.Security.Cryptography.RSA.Create(2048);
-        var req = new CertificateRequest(
-            "CN=safe-host",
-            rsa,
-            System.Security.Cryptography.HashAlgorithmName.SHA256,
-            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
-
-        var san = new SubjectAlternativeNameBuilder();
-        san.AddDnsName("safe-host");
-        san.AddDnsName("localhost");
-        san.AddIpAddress(IPAddress.Loopback);
-        req.CertificateExtensions.Add(san.Build());
-        req.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
-        req.CertificateExtensions.Add(new X509KeyUsageExtension(
-            X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
-
-        var now = DateTimeOffset.UtcNow.AddMinutes(-5);
-        var cert = req.CreateSelfSigned(now, now.AddYears(5));
-        // Rewrap to ensure Kestrel can access the private key across platforms
-        return new X509Certificate2(cert.Export(X509ContentType.Pfx));
-    }
-}
