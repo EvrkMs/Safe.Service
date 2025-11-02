@@ -1,21 +1,37 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using Auth.TokenValidation;
-using Auth.TokenValidation.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
+using Safe.Host.Introspection;
 
 namespace Safe.Host.Authentication;
 
-public sealed class IntrospectionAuthenticationHandler(
-    IOptionsMonitor<AuthenticationSchemeOptions> options,
-    ILoggerFactory loggerFactory,
-    UrlEncoder encoder,
-    ITokenIntrospector introspector) : AuthenticationHandler<AuthenticationSchemeOptions>(options, loggerFactory, encoder)
+public sealed class IntrospectionAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
+    private static readonly TimeSpan FailureCacheDuration = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan RateLimitCacheDuration = TimeSpan.FromSeconds(2);
+
+    private readonly ITokenIntrospector _introspector;
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<IntrospectionAuthenticationHandler> _logger;
+
+    public IntrospectionAuthenticationHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory loggerFactory,
+        UrlEncoder encoder,
+        ITokenIntrospector introspector,
+        IMemoryCache cache)
+        : base(options, loggerFactory, encoder)
+    {
+        _introspector = introspector;
+        _cache = cache;
+        _logger = loggerFactory.CreateLogger<IntrospectionAuthenticationHandler>();
+    }
+
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.TryGetValue("Authorization", out var rawHeader) || rawHeader.Count == 0)
@@ -29,25 +45,53 @@ public sealed class IntrospectionAuthenticationHandler(
             return AuthenticateResult.NoResult();
         }
 
-        TokenIntrospectionResult result;
+        if (_cache.TryGetValue(token, out CachedTokenEntry? cachedEntry) &&
+            cachedEntry is { State: CachedTokenState.Active, Principal: { } principalFromCache })
+        {
+            return AuthenticateResult.Success(new AuthenticationTicket(principalFromCache, Scheme.Name));
+        }
+
+        cachedEntry = await _cache.GetOrCreateAsync(token, entry => CreateCacheEntryAsync(entry, token))
+                       ?? CachedTokenEntry.Inactive();
+
+        return cachedEntry.State switch
+        {
+            CachedTokenState.Active when cachedEntry.Principal is not null =>
+                AuthenticateResult.Success(new AuthenticationTicket(cachedEntry.Principal, Scheme.Name)),
+            CachedTokenState.Inactive => AuthenticateResult.Fail("Token is inactive."),
+            CachedTokenState.Error => AuthenticateResult.Fail(cachedEntry.Error ?? "Token introspection failed."),
+            _ => AuthenticateResult.Fail("Token introspection failed.")
+        };
+    }
+
+    private async Task<CachedTokenEntry> CreateCacheEntryAsync(ICacheEntry entry, string token)
+    {
         try
         {
-            result = await introspector.IntrospectAsync(token, Context.RequestAborted);
+            var result = await _introspector.IntrospectAsync(token, Context.RequestAborted);
+
+            if (!result.Active)
+            {
+                entry.AbsoluteExpirationRelativeToNow = FailureCacheDuration;
+                return CachedTokenEntry.Inactive();
+            }
+
+            var principal = CreatePrincipal(result);
+            entry.AbsoluteExpirationRelativeToNow = GetSuccessTtl(result);
+            return CachedTokenEntry.Active(principal);
+        }
+        catch (Exception ex) when (IsRateLimitException(ex))
+        {
+            entry.AbsoluteExpirationRelativeToNow = RateLimitCacheDuration;
+            _logger.LogWarning(ex, "Token introspection throttled by authority.");
+            return CachedTokenEntry.FromError("Token introspection failed due to rate limiting.");
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Token introspection failed");
-            return AuthenticateResult.Fail("Token introspection failed.");
+            entry.AbsoluteExpirationRelativeToNow = FailureCacheDuration;
+            _logger.LogWarning(ex, "Token introspection failed");
+            return CachedTokenEntry.FromError("Token introspection failed.");
         }
-
-        if (!result.Active)
-        {
-            return AuthenticateResult.Fail("Token is inactive.");
-        }
-
-        var principal = CreatePrincipal(result);
-        var ticket = new AuthenticationTicket(principal, Scheme.Name);
-        return AuthenticateResult.Success(ticket);
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
@@ -134,5 +178,36 @@ public sealed class IntrospectionAuthenticationHandler(
                 claims.Add(new(ClaimTypes.Role, element.GetString()!));
             }
         }
+    }
+
+    private static TimeSpan GetSuccessTtl(TokenIntrospectionResult result)
+    {
+        if (result.ExpiresAt is { } expiresAt)
+        {
+            var ttl = expiresAt - DateTimeOffset.UtcNow;
+            if (ttl > TimeSpan.FromSeconds(15))
+            {
+                return ttl;
+            }
+        }
+
+        return TimeSpan.FromMinutes(5);
+    }
+
+    private static bool IsRateLimitException(Exception ex)
+        => ex is InvalidOperationException ioe && ioe.Message.Contains("429", StringComparison.OrdinalIgnoreCase);
+
+    private enum CachedTokenState
+    {
+        Active,
+        Inactive,
+        Error
+    }
+
+    private sealed record CachedTokenEntry(CachedTokenState State, ClaimsPrincipal? Principal, string? Error)
+    {
+        public static CachedTokenEntry Active(ClaimsPrincipal principal) => new(CachedTokenState.Active, principal, null);
+        public static CachedTokenEntry Inactive() => new(CachedTokenState.Inactive, null, null);
+        public static CachedTokenEntry FromError(string? error) => new(CachedTokenState.Error, null, error);
     }
 }

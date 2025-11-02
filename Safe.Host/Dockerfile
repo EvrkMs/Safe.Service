@@ -3,8 +3,6 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 COPY Safe.Service/nuget.config ./nuget.config
-COPY Auth.TokenValidation/nupkg/ /Auth.TokenValidation/nupkg/
-
 COPY Safe.Service/Safe.Host/Safe.Host.csproj Safe.Host/
 COPY Safe.Service/Safe.Application/Safe.Application.csproj Safe.Application/
 COPY Safe.Service/Safe.Domain/Safe.Domain.csproj Safe.Domain/

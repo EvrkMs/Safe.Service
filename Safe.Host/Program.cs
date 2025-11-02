@@ -1,5 +1,3 @@
-using Auth.TokenValidation;
-using Auth.TokenValidation.Options;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +5,7 @@ using Safe.Application.Services;
 using Safe.EntityFramework;
 using Safe.EntityFramework.Contexts;
 using Safe.Host.Authentication;
+using Safe.Host.Introspection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,14 +27,21 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
     });
 
-builder.Services.AddAuthTokenIntrospection(builder.Configuration);
-builder.Services.PostConfigure<AuthIntrospectionOptions>(options =>
+builder.Services.AddSafeTokenIntrospection(builder.Configuration);
+var fallbackIntrospectionSecret = builder.Configuration["Auth:Introspection:ClientSecret"]
+    ?? builder.Configuration["OIDC_SVC_INTROSPECTOR_SECRET"];
+builder.Services.PostConfigure<TokenIntrospectionOptions>(options =>
 {
+    if (string.IsNullOrWhiteSpace(options.ClientSecret) && !string.IsNullOrWhiteSpace(fallbackIntrospectionSecret))
+    {
+        options.ClientSecret = fallbackIntrospectionSecret;
+    }
     if (string.IsNullOrWhiteSpace(options.ClientSecret))
     {
         throw new InvalidOperationException("Auth:Introspection:ClientSecret must be configured.");
     }
 });
+builder.Services.AddMemoryCache();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -77,6 +83,7 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
+app.UseCors("AllowAvaSubdomains");
 app.UseAuthentication();
 app.UseAuthorization();
 

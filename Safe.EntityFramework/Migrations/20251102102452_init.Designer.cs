@@ -12,8 +12,8 @@ using Safe.EntityFramework.Contexts;
 namespace Safe.EntityFramework.Migrations
 {
     [DbContext(typeof(SafeDbContext))]
-    [Migration("20251102082341_AddAuditFields")]
-    partial class AddAuditFields
+    [Migration("20251102102452_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

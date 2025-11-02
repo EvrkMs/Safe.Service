@@ -16,9 +16,6 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-    
-    <!-- Локальный NuGet пакет -->
-    <PackageReference Include="Auth.TokenValidation" Version="1.0.0" />
   </ItemGroup>
   
   <ItemGroup>
