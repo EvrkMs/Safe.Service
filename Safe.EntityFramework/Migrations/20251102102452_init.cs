@@ -28,13 +28,22 @@ namespace Safe.EntityFramework.Migrations
                     Status = table.Column<string>(type: "text", nullable: false),
                     ReversalOfChangeId = table.Column<long>(type: "bigint", nullable: true),
                     ReversalComment = table.Column<string>(type: "text", nullable: true),
-                    ReversedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    ReversedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    ModifiedBy = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    ModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SafeChanges", x => x.Id);
-                    table.CheckConstraint("ck_safechange_amount_positive", "amount > 0");
+                    table.CheckConstraint("ck_safechange_amount_positive", "\"Amount\" > 0");
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SafeChanges_CreatedBy",
+                table: "SafeChanges",
+                column: "CreatedBy");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SafeChanges_OccurredAt",

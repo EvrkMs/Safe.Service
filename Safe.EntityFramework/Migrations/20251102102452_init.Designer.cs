@@ -12,7 +12,7 @@ using Safe.EntityFramework.Contexts;
 namespace Safe.EntityFramework.Migrations
 {
     [DbContext(typeof(SafeDbContext))]
-    [Migration("20251102072135_init")]
+    [Migration("20251102102452_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -50,9 +50,21 @@ namespace Safe.EntityFramework.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.Property<string>("Direction")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTimeOffset>("OccurredAt")
                         .ValueGeneratedOnAdd()
@@ -72,11 +84,19 @@ namespace Safe.EntityFramework.Migrations
                     b.Property<DateTimeOffset?>("ReversedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
 
                     b.HasIndex("OccurredAt");
 
@@ -86,7 +106,7 @@ namespace Safe.EntityFramework.Migrations
 
                     b.ToTable("SafeChanges", t =>
                         {
-                            t.HasCheckConstraint("ck_safechange_amount_positive", "amount > 0");
+                            t.HasCheckConstraint("ck_safechange_amount_positive", "\"Amount\" > 0");
                         });
                 });
 #pragma warning restore 612, 618
