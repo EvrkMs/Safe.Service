@@ -1,32 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <None Remove=".git" />
     <None Remove=".gitignore" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    
+    <!-- Локальный NuGet пакет -->
+    <PackageReference Include="Auth.TokenValidation" Version="1.0.0" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <ProjectReference Include="..\Safe.Application\Safe.Application.csproj" />
   </ItemGroup>
-
-	<ItemGroup>
-	  <Reference Include="Auth.TokenValidation">
-	    <HintPath>..\..\Auth.TokenValidation\bin\Debug\net9.0\Auth.TokenValidation.dll</HintPath>
-	  </Reference>
-	</ItemGroup>
-
 </Project>
