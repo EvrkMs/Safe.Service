@@ -8,8 +8,6 @@ services:
       - ../auth-host.env
     container_name: safe-host
     restart: unless-stopped
-    environment:
-      Auth__Introspection__ClientSecret: ${OIDC_SVC_INTROSPECTOR_SECRET}
     expose:
       - "5001"
     networks:

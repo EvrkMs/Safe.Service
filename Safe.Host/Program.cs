@@ -44,10 +44,12 @@ builder.Services.AddAuthentication(options =>
     })
     .AddScheme<AuthenticationSchemeOptions, IntrospectionAuthenticationHandler>("Introspection", _ => { });
 
-var connectionString = builder.Configuration.GetConnectionString("SAFE_DB");
+var connectionString = builder.Configuration.GetConnectionString("SafeDb")
+                      ?? builder.Configuration.GetConnectionString("SAFEDB")
+                      ?? builder.Configuration.GetConnectionString("SAFE_DB");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    throw new InvalidOperationException("Connection string 'SAFE_DB' is not configured.");
+    throw new InvalidOperationException("Connection string 'SafeDb' is not configured.");
 }
 
 builder.Services.AddDbContext<SafeDbContext>(options =>

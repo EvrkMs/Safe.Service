@@ -8,7 +8,7 @@ internal class SafeChangesConfiguration : IEntityTypeConfiguration<SafeChange>
 {
     public void Configure(EntityTypeBuilder<SafeChange> b)
     {
-        b.HasCheckConstraint("ck_safechange_amount_positive", "amount > 0");
+        b.HasCheckConstraint("ck_safechange_amount_positive", "\"Amount\" > 0");
 
         // Даты в UTC
         b.Property(x => x.CreatedAt)

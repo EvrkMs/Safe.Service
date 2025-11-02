@@ -103,7 +103,7 @@ namespace Safe.EntityFramework.Migrations
 
                     b.ToTable("SafeChanges", t =>
                         {
-                            t.HasCheckConstraint("ck_safechange_amount_positive", "amount > 0");
+                            t.HasCheckConstraint("ck_safechange_amount_positive", "\"Amount\" > 0");
                         });
                 });
 #pragma warning restore 612, 618

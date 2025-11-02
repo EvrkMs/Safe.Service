@@ -33,7 +33,7 @@ namespace Safe.EntityFramework.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SafeChanges", x => x.Id);
-                    table.CheckConstraint("ck_safechange_amount_positive", "amount > 0");
+                    table.CheckConstraint("ck_safechange_amount_positive", "\"Amount\" > 0");
                 });
 
             migrationBuilder.CreateIndex(
