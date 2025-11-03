@@ -101,7 +101,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Safe.Read", policy => policy.RequireAuthenticatedUser());
-    options.AddPolicy("Safe.Write", policy => policy.RequireRole("root", "SafeManager"));
+    options.AddPolicy("Safe.Write", policy => policy.RequireRole("Root", "SafeManager"));
 });
 
 builder.Services.AddHealthChecks()
