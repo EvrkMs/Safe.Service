@@ -110,7 +110,7 @@ public sealed class SafeService(
     public async Task<BalanceDto> GetBalanceAsync(CancellationToken ct)
     {
         var balance = await db.SafeChanges
-            .Where(x => x.Status == SafeChangeStatus.Posted)
+            .Where(x => x.Status != SafeChangeStatus.Pending)
             .SumAsync(x => x.Direction == SafeChangeDirection.Credit ? x.Amount : -x.Amount, ct);
 
         logger.LogDebug("Current balance: {Balance}", balance);
