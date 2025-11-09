@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Safe.Domain\Safe.Domain.csproj" />
+    <ProjectReference Include="..\Safe.Application\Safe.Application.csproj" />
   </ItemGroup>
 
 </Project>

@@ -22,5 +22,6 @@
   
   <ItemGroup>
     <ProjectReference Include="..\Safe.Application\Safe.Application.csproj" />
+    <ProjectReference Include="..\Safe.EntityFramework\Safe.EntityFramework.csproj" />
   </ItemGroup>
 </Project>

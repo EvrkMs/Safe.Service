@@ -1,4 +1,5 @@
-﻿using Safe.Domain.DTOs;
+﻿using Safe.Application.Models;
+using Safe.Domain.DTOs;
 
 using static Safe.Domain.Commands.SafeCommand;
 
@@ -10,5 +11,5 @@ public interface ISafeService
     Task ReverseAsync(ReverseChangeCommand cmd, CancellationToken ct);
     Task<BalanceDto> GetBalanceAsync(CancellationToken ct);
     Task<SafeChangeDto?> GetByIdAsync(long id, CancellationToken ct);
-    Task<(IReadOnlyList<SafeChangeDto> Items, int Total)> GetChangesAsync(GetChangesQuery query, CancellationToken ct);
+    Task<PageResult<SafeChangeDto>> GetChangesAsync(GetChangesQuery query, CancellationToken ct);
 }
