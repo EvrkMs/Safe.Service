@@ -34,6 +34,7 @@ app.UseCors("admin-ui");
 app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseAuthentication();
+app.UseMiddleware<TokenRevocationMiddleware>();
 app.UseAuthorization();
 
 app.Use(async (context, next) =>

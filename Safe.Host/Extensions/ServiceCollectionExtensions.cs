@@ -11,6 +11,7 @@ using Safe.EntityFramework.Contexts;
 using Safe.EntityFramework.Repositories;
 using Safe.Host.Filters;
 using Safe.Host.Middleware;
+using Safe.Host.Revocation;
 using static Safe.Domain.Commands.SafeCommand;
 
 namespace Safe.Host.Extensions;
@@ -166,6 +167,10 @@ internal static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
 
         services.AddValidatorsFromAssemblyContaining<CreateChangeCommandValidator>();
+
+        services.Configure<RedisRevocationOptions>(configuration.GetSection("Redis"));
+        services.AddSingleton<IRevokedTokenCache, RevokedTokenCache>();
+        services.AddHostedService<RedisRevocationListener>();
 
         services.Configure<RequestLoggingOptions>(options =>
         {
